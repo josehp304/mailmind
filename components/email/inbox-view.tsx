@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { EmailList } from './email-list';
 import { EmailToolbar } from './email-toolbar';
+import { DailySummaryCard } from '@/components/ai/daily-summary-card';
 import { useEmails, type Email } from '@/lib/hooks/useEmails';
 
 interface InboxViewProps {
@@ -185,20 +186,40 @@ export function InboxView({ category = 'inbox', searchQuery, onEmailSelect, clas
   }
 
   return (
-    <div className={className}>
-      <EmailToolbar
-        selectedCount={selectedEmails.size}
-        totalCount={emails.length}
-        onSelectAll={handleSelectAll}
-        onDeselectAll={handleDeselectAll}
-        onRefresh={handleRefresh}
-        onArchiveSelected={handleBulkArchive}
-        onDeleteSelected={handleBulkDelete}
-        onStarSelected={handleBulkStar}
-        onMarkImportant={handleMarkImportant}
-      />
+    <div className={`flex flex-col h-full ${className}`}>
+      {/* AI Daily Summary */}
+      {category === 'inbox' && emails.length > 0 && (
+        <div className="flex-shrink-0">
+          <DailySummaryCard
+            emails={emails.map(email => ({
+              id: email.gmailId,
+              from: email.from,
+              subject: email.subject,
+              snippet: email.snippet,
+              date: email.receivedAt.toISOString(),
+              isUnread: !email.isRead,
+            }))}
+            onRefresh={handleRefresh}
+          />
+        </div>
+      )}
+
+      <div className="flex-shrink-0">
+        <EmailToolbar
+          selectedCount={selectedEmails.size}
+          totalCount={emails.length}
+          onSelectAll={handleSelectAll}
+          onDeselectAll={handleDeselectAll}
+          onRefresh={handleRefresh}
+          onArchiveSelected={handleBulkArchive}
+          onDeleteSelected={handleBulkDelete}
+          onStarSelected={handleBulkStar}
+          onMarkImportant={handleMarkImportant}
+        />
+      </div>
       
-      <EmailList
+      <div className="flex-1 overflow-hidden">
+        <EmailList
         emails={emails.map(email => ({
           id: email.gmailId,
           from: email.from,
@@ -214,6 +235,7 @@ export function InboxView({ category = 'inbox', searchQuery, onEmailSelect, clas
         }))}
         selectedEmailId={selectedEmailId}
         onEmailSelect={(email) => {
+          // Find the original email by gmailId
           const originalEmail = emails.find(e => e.gmailId === email.id);
           if (originalEmail) {
             handleEmailSelect(originalEmail);
@@ -222,21 +244,13 @@ export function InboxView({ category = 'inbox', searchQuery, onEmailSelect, clas
         onEmailStar={handleEmailStar}
         onEmailArchive={handleEmailArchive}
         onEmailDelete={handleEmailDelete}
-        onEmailToggleImportant={handleEmailToggleImportant}
-        loading={loading}
-      />
-
-      {/* Load more button */}
-      {hasMore && !loading && (
-        <div className="flex justify-center py-4">
-          <button
-            onClick={loadMoreEmails}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Load More Emails
-          </button>
-        </div>
-      )}
+          onEmailToggleImportant={handleEmailToggleImportant}
+          loading={loading}
+          hasMore={hasMore}
+          onLoadMore={loadMoreEmails}
+          className="h-full"
+        />
+      </div>
     </div>
   );
 }

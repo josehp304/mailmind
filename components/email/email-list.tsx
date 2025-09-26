@@ -196,6 +196,8 @@ interface EmailListProps {
   onEmailDelete?: (emailId: string) => void;
   onEmailToggleImportant?: (emailId: string) => void;
   loading?: boolean;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
   className?: string;
 }
 
@@ -208,6 +210,8 @@ export function EmailList({
   onEmailDelete,
   onEmailToggleImportant,
   loading,
+  hasMore,
+  onLoadMore,
   className,
 }: EmailListProps) {
   if (loading) {
@@ -238,19 +242,63 @@ export function EmailList({
   }
 
   return (
-    <div className={cn('divide-y divide-gray-100', className)}>
-      {emails.map((email) => (
-        <EmailListItem
-          key={email.id}
-          email={email}
-          isSelected={selectedEmailId === email.id}
-          onClick={() => onEmailSelect?.(email)}
-          onStar={() => onEmailStar?.(email.id)}
-          onArchive={() => onEmailArchive?.(email.id)}
-          onDelete={() => onEmailDelete?.(email.id)}
-          onToggleImportant={() => onEmailToggleImportant?.(email.id)}
-        />
-      ))}
+    <div className={cn('flex flex-col h-full', className)}>
+      <div className="flex-1 overflow-y-auto">
+        <div className="divide-y divide-gray-100">
+          {emails.map((email) => (
+            <EmailListItem
+              key={email.id}
+              email={email}
+              isSelected={selectedEmailId === email.id}
+              onClick={() => {
+                onEmailSelect?.(email);
+              }}
+              onStar={() => onEmailStar?.(email.id)}
+              onArchive={() => onEmailArchive?.(email.id)}
+              onDelete={() => onEmailDelete?.(email.id)}
+              onToggleImportant={() => onEmailToggleImportant?.(email.id)}
+            />
+          ))}
+        </div>
+        
+        {/* Load more button */}
+        {hasMore && !loading && (
+          <div className="flex justify-center py-4 border-t">
+            <button
+              onClick={() => {
+                console.log('Load More clicked, hasMore:', hasMore, 'loading:', loading);
+                onLoadMore?.();
+              }}
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2"
+            >
+              <span>Load More Emails</span>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
+        )}
+        
+        {/* Loading more indicator */}
+        {loading && (
+          <div className="flex justify-center py-4 border-t">
+            <div className="flex items-center gap-2 text-gray-500">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              <span>Loading more emails...</span>
+            </div>
+          </div>
+        )}
+        
+        {/* No more emails indicator */}
+        {!hasMore && !loading && emails.length > 0 && (
+          <div className="flex justify-center py-4 border-t">
+            <div className="text-center text-gray-500">
+              <div className="text-sm">You've reached the end</div>
+              <div className="text-xs mt-1">No more emails to load</div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -125,28 +125,55 @@ export class GmailService {
     isHtml?: boolean;
   }) {
     try {
-      const emailContent = [
-        `To: ${email.to}`,
-        email.cc ? `Cc: ${email.cc}` : '',
-        email.bcc ? `Bcc: ${email.bcc}` : '',
-        `Subject: ${email.subject}`,
-        `Content-Type: ${email.isHtml ? 'text/html' : 'text/plain'}; charset=utf-8`,
-        '',
-        email.body,
-      ].filter(Boolean).join('\n');
+      // Create email message following Python EmailMessage pattern
+      const message = {
+        to: email.to,
+        subject: email.subject,
+        body: email.body,
+        cc: email.cc,
+        bcc: email.bcc,
+        isHtml: email.isHtml || false
+      };
 
-      const encodedEmail = Buffer.from(emailContent).toString('base64url');
+      // Build the raw email content similar to Python's EmailMessage.as_bytes()
+      const emailLines = [];
+      
+      // Add headers
+      emailLines.push(`To: ${message.to}`);
+      if (message.cc) emailLines.push(`Cc: ${message.cc}`);
+      if (message.bcc) emailLines.push(`Bcc: ${message.bcc}`);
+      emailLines.push(`Subject: ${message.subject}`);
+      emailLines.push('MIME-Version: 1.0');
+      emailLines.push(`Content-Type: ${message.isHtml ? 'text/html' : 'text/plain'}; charset=utf-8`);
+      emailLines.push('Content-Transfer-Encoding: 7bit');
+      
+      // Empty line to separate headers from body
+      emailLines.push('');
+      
+      // Add body content
+      emailLines.push(message.body);
+      
+      const emailContent = emailLines.join('\r\n');
+      
+      // Encode using base64 URL-safe encoding (equivalent to Python's base64.urlsafe_b64encode)
+      const encodedMessage = Buffer.from(emailContent, 'utf8')
+        .toString('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
 
+      const createMessage = { raw: encodedMessage };
+      
+      // Send message (equivalent to Python's service.users().messages().send())
       const response = await this.gmail.users.messages.send({
         userId: 'me',
-        requestBody: {
-          raw: encodedEmail,
-        },
+        requestBody: createMessage,
       });
-
+      
+      console.log(`Message Id: ${response.data.id}`);
       return response.data;
     } catch (error) {
-      console.error('Error sending email:', error);
+      console.error('An error occurred:', error);
       throw new Error('Failed to send email');
     }
   }

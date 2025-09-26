@@ -1,8 +1,9 @@
 "use client"
-import React from 'react';
+import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ComposeModal } from '@/components/email/compose-modal';
 import { 
   Inbox, 
   Send, 
@@ -37,11 +38,16 @@ const defaultCategories = [
 ];
 
 export function Sidebar({ className, unreadCounts = {}, currentCategory = 'inbox', onCategoryChange }: SidebarProps) {
+  const [isComposeOpen, setIsComposeOpen] = useState(false);
+
   return (
     <div className={cn('flex flex-col h-full bg-white border-r border-gray-200 w-64', className)}>
       {/* Compose Button */}
       <div className="p-4">
-        <Button className="w-full bg-black hover:bg-gray-800 text-white rounded-full">
+        <Button 
+          className="w-full bg-black hover:bg-gray-800 text-white rounded-full"
+          onClick={() => setIsComposeOpen(true)}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Compose
         </Button>
@@ -114,6 +120,12 @@ export function Sidebar({ className, unreadCounts = {}, currentCategory = 'inbox
           Settings
         </Button>
       </div>
+
+      {/* Compose Modal */}
+      <ComposeModal 
+        open={isComposeOpen} 
+        onOpenChange={setIsComposeOpen}
+      />
     </div>
   );
 }

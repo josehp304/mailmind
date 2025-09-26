@@ -1,9 +1,10 @@
 "use client"
-import React from 'react';
+import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ComposeModal } from '@/components/email/compose-modal';
 import { 
   Reply, 
   ReplyAll, 
@@ -63,10 +64,31 @@ export function EmailViewer({
   onAISummarize,
   className,
 }: EmailViewerProps) {
+  const [isComposeOpen, setIsComposeOpen] = useState(false);
+  const [composeType, setComposeType] = useState<'reply' | 'replyAll' | 'forward' | null>(null);
+  
   const fromName = email.from.split('<')[0].trim() || email.from;
   const fromEmail = email.from.includes('<') 
     ? email.from.split('<')[1].replace('>', '') 
     : email.from;
+
+  const handleReply = () => {
+    setComposeType('reply');
+    setIsComposeOpen(true);
+    onReply?.();
+  };
+
+  const handleReplyAll = () => {
+    setComposeType('replyAll');
+    setIsComposeOpen(true);
+    onReplyAll?.();
+  };
+
+  const handleForward = () => {
+    setComposeType('forward');
+    setIsComposeOpen(true);
+    onForward?.();
+  };
 
   return (
     <div className={cn('flex flex-col h-full bg-white', className)}>
@@ -232,7 +254,7 @@ export function EmailViewer({
       <div className="flex items-center justify-between p-4 border-t border-gray-200 bg-gray-50">
         <div className="flex space-x-2">
           <Button
-            onClick={onReply}
+            onClick={handleReply}
             className="bg-black hover:bg-gray-800 text-white"
           >
             <Reply className="w-4 h-4 mr-2" />
@@ -240,14 +262,14 @@ export function EmailViewer({
           </Button>
           <Button
             variant="outline"
-            onClick={onReplyAll}
+            onClick={handleReplyAll}
           >
             <ReplyAll className="w-4 h-4 mr-2" />
             Reply All
           </Button>
           <Button
             variant="outline"
-            onClick={onForward}
+            onClick={handleForward}
           >
             <Forward className="w-4 h-4 mr-2" />
             Forward
@@ -258,6 +280,17 @@ export function EmailViewer({
           Received {formatDistanceToNow(email.receivedAt, { addSuffix: true })}
         </div>
       </div>
+
+      {/* Compose Modal */}
+      <ComposeModal 
+        open={isComposeOpen} 
+        onOpenChange={setIsComposeOpen}
+        replyTo={composeType === 'reply' || composeType === 'replyAll' ? {
+          to: composeType === 'replyAll' ? [email.from, email.to, email.cc].filter(Boolean).join(', ') : email.from,
+          subject: email.subject.startsWith('Re: ') ? email.subject : `Re: ${email.subject}`,
+          originalBody: email.body || email.snippet,
+        } : undefined}
+      />
     </div>
   );
 }
