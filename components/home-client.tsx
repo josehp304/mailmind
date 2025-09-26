@@ -6,24 +6,7 @@ import { InboxView } from '@/components/email/inbox-view';
 import { EmailViewer } from '@/components/email/email-viewer';
 import { useSession } from '@/lib/auth/session';
 import { Button } from '@/components/ui/button';
-
-interface Email {
-  id: string;
-  from: string;
-  to: string;
-  cc?: string;
-  bcc?: string;
-  subject: string;
-  body?: string;
-  htmlBody?: string;
-  snippet: string;
-  isRead: boolean;
-  isStarred: boolean;
-  isImportant: boolean;
-  hasAttachments: boolean;
-  receivedAt: Date;
-  labels?: string[];
-}
+import { type Email } from '@/lib/hooks/useEmails';
 
 export default function HomeClient() {
   const { user, isLoading, isAuthenticated, login } = useSession();
@@ -75,52 +58,57 @@ export default function HomeClient() {
       onSearchChange={setSearchQuery}
     >
       <div className="flex flex-1 h-full">
-        <InboxView
-          category={currentCategory}
-          searchQuery={searchQuery}
-          className={selectedEmail ? 'w-1/2 lg:w-2/5' : 'flex-1'}
-          onEmailSelect={(email) => {
-            setSelectedEmail(email as Email);
-          }}
-        />
-        
-        {selectedEmail && (
-          <div className="flex-1 border-l border-gray-200">
+        {!selectedEmail ? (
+          <InboxView
+            category={currentCategory}
+            searchQuery={searchQuery}
+            className="flex-1"
+            onEmailSelect={(email) => {
+              setSelectedEmail(email);
+            }}
+          />
+        ) : (
+          <div className="flex-1">
             <EmailViewer
-              email={selectedEmail}
+              email={{
+                ...selectedEmail,
+                id: selectedEmail.gmailId, // Map gmailId to id for EmailViewer compatibility
+                body: selectedEmail.body || selectedEmail.snippet,
+                labels: [], // Convert labelIds to labels if needed
+              }}
               onBack={() => setSelectedEmail(null)}
               onReply={() => {
-                console.log('Reply to:', selectedEmail.id);
+                console.log('Reply to:', selectedEmail.gmailId);
                 // TODO: Open compose dialog
               }}
               onReplyAll={() => {
-                console.log('Reply all to:', selectedEmail.id);
+                console.log('Reply all to:', selectedEmail.gmailId);
                 // TODO: Open compose dialog
               }}
               onForward={() => {
-                console.log('Forward:', selectedEmail.id);
+                console.log('Forward:', selectedEmail.gmailId);
                 // TODO: Open compose dialog
               }}
               onArchive={() => {
-                console.log('Archive:', selectedEmail.id);
+                console.log('Archive:', selectedEmail.gmailId);
                 setSelectedEmail(null);
               }}
               onDelete={() => {
-                console.log('Delete:', selectedEmail.id);
+                console.log('Delete:', selectedEmail.gmailId);
                 setSelectedEmail(null);
               }}
               onStar={() => {
-                console.log('Star:', selectedEmail.id);
+                console.log('Star:', selectedEmail.gmailId);
                 // Update the email's starred status
                 setSelectedEmail(prev => prev ? { ...prev, isStarred: !prev.isStarred } : null);
               }}
               onToggleImportant={() => {
-                console.log('Toggle important:', selectedEmail.id);
+                console.log('Toggle important:', selectedEmail.gmailId);
                 // Update the email's important status
                 setSelectedEmail(prev => prev ? { ...prev, isImportant: !prev.isImportant } : null);
               }}
               onAISummarize={() => {
-                console.log('AI Summarize:', selectedEmail.id);
+                console.log('AI Summarize:', selectedEmail.gmailId);
                 // TODO: Call AI summarization API
               }}
             />

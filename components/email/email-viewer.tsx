@@ -77,7 +77,7 @@ export function EmailViewer({
             variant="ghost"
             size="sm"
             onClick={onBack}
-            className="lg:hidden"
+            className=""
           >
             <ArrowLeft className="w-4 h-4" />
           </Button>

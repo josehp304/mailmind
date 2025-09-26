@@ -3,11 +3,12 @@ import { requireAuth } from '@/lib/gmail/auth-helper';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const gmail = await requireAuth();
-    const messageId = params.id;
+    const { id } = await params;
+    const messageId = id;
     
     const message = await gmail.getMessage(messageId);
     
@@ -23,11 +24,12 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const gmail = await requireAuth();
-    const messageId = params.id;
+    const { id } = await params;
+    const messageId = id;
     const body = await request.json();
     
     const { action, addLabels, removeLabels } = body;

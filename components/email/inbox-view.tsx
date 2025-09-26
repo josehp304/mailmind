@@ -1,23 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { EmailList } from './email-list';
 import { EmailToolbar } from './email-toolbar';
-
-interface Email {
-  id: string;
-  from: string;
-  to: string;
-  subject: string;
-  body?: string;
-  snippet: string;
-  isRead: boolean;
-  isStarred: boolean;
-  isImportant: boolean;
-  hasAttachments: boolean;
-  receivedAt: Date;
-  labels?: string[];
-}
+import { useEmails, type Email } from '@/lib/hooks/useEmails';
 
 interface InboxViewProps {
   category?: string;
@@ -26,287 +12,84 @@ interface InboxViewProps {
   className?: string;
 }
 
-// Mock data for demonstration
-const mockEmails: Email[] = [
-  {
-    id: '1',
-    from: 'John Doe <john@example.com>',
-    to: 'you@example.com',
-    subject: 'Important Meeting Tomorrow',
-    body: `Hi there,
-
-I wanted to confirm our meeting scheduled for tomorrow at 10 AM. We'll be discussing the Q4 project roadmap and budget allocation.
-
-The meeting will be held in Conference Room B on the 3rd floor. Please bring your laptop and any relevant project documents.
-
-Looking forward to seeing you there!
-
-Best regards,
-John Doe
-Project Manager`,
-    snippet: 'Hi there, I wanted to confirm our meeting scheduled for tomorrow at 10 AM. Please let me know if you need to reschedule.',
-    isRead: false,
-    isStarred: true,
-    isImportant: true,
-    hasAttachments: false,
-    receivedAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-    labels: ['Work', 'Urgent'],
-  },
-  {
-    id: '2',
-    from: 'Sarah Wilson <sarah@company.com>',
-    to: 'you@example.com',
-    subject: 'Project Update - Q4 Progress',
-    body: `Hello team,
-
-The Q4 project is progressing well. Here's our current status:
-
-✅ Phase 1: Requirements gathering (100% complete)
-✅ Phase 2: Design mockups (100% complete)
-🔄 Phase 3: Development (75% complete)
-📅 Phase 4: Testing (Starting next week)
-📅 Phase 5: Deployment (Scheduled for Dec 15)
-
-We have completed 75% of the milestones and are on track for the December deadline. The development team has been working efficiently, and we expect to finish the core features by next Friday.
-
-Please find the detailed progress report attached.
-
-Best,
-Sarah Wilson
-Senior Project Manager`,
-    snippet: 'The Q4 project is progressing well. We have completed 75% of the milestones and are on track for the December deadline.',
-    isRead: true,
-    isStarred: false,
-    isImportant: false,
-    hasAttachments: true,
-    receivedAt: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4 hours ago
-    labels: ['Work'],
-  },
-  {
-    id: '3',
-    from: 'Netflix <info@netflix.com>',
-    to: 'you@example.com',
-    subject: 'New shows this week',
-    body: `🎬 What's New This Week
-
-Check out the latest shows and movies added to Netflix this week:
-
-NEW SERIES:
-• "Mystery of the Lost City" - Adventure Drama
-• "Tech Titans" - Documentary Series
-• "Cooking with Love" - Reality Show
-
-NEW MOVIES:
-• "The Last Journey" - Action Thriller
-• "Romantic Escape" - Romance Comedy
-• "Space Odyssey 2024" - Sci-Fi Adventure
-
-From thrilling documentaries to romantic comedies, there's something for everyone!
-
-Happy watching! 🍿
-
-The Netflix Team`,
-    snippet: 'Check out the latest shows and movies added to Netflix this week. From thrilling documentaries to romantic comedies.',
-    isRead: true,
-    isStarred: false,
-    isImportant: false,
-    hasAttachments: false,
-    receivedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
-    labels: ['Promotions'],
-  },
-  {
-    id: '4',
-    from: 'Tech Recruiter <recruiter@techcorp.com>',
-    to: 'you@example.com',
-    subject: 'Exciting opportunity at TechCorp',
-    body: `Dear Developer,
-
-I hope this email finds you well. I came across your profile and was impressed by your technical background and experience.
-
-We have an exciting Senior Developer position at TechCorp that I believe would be a perfect match for your skills:
-
-POSITION DETAILS:
-• Role: Senior Full-Stack Developer
-• Location: San Francisco, CA (Remote options available)
-• Salary: $120k - $160k + equity
-• Benefits: Comprehensive health insurance, 401k matching, unlimited PTO
-
-KEY REQUIREMENTS:
-• 5+ years of experience with React, Node.js
-• Strong background in cloud technologies (AWS/Azure)
-• Experience with agile development methodologies
-
-The role offers competitive salary, remote work options, and the opportunity to work with cutting-edge technologies in a fast-growing company.
-
-Would you be interested in learning more about this opportunity? I'd love to schedule a brief call to discuss the details.
-
-Best regards,
-Amanda Smith
-Senior Technical Recruiter
-TechCorp Solutions`,
-    snippet: 'We have an exciting Senior Developer position that matches your profile. The role offers competitive salary and remote work options.',
-    isRead: false,
-    isStarred: false,
-    isImportant: false,
-    hasAttachments: false,
-    receivedAt: new Date(Date.now() - 6 * 60 * 60 * 1000), // 6 hours ago
-    labels: ['Cold Emails'],
-  },
-  {
-    id: '5',
-    from: 'Bank Alert <alerts@bank.com>',
-    to: 'you@example.com',
-    subject: 'Your account statement is ready',
-    body: `Important Account Notice
-
-Dear Valued Customer,
-
-Your monthly account statement for October 2024 is now available for download.
-
-ACCOUNT SUMMARY:
-• Account Number: ****1234
-• Statement Period: Oct 1 - Oct 31, 2024
-• Beginning Balance: $2,450.00
-• Ending Balance: $3,120.50
-• Total Deposits: $4,500.00
-• Total Withdrawals: $3,829.50
-
-You can view and download your complete statement by logging into your online banking account or using our mobile app.
-
-IMPORTANT REMINDERS:
-• Review your statement for any unauthorized transactions
-• Report any discrepancies within 60 days
-• Keep your statements for tax and financial records
-
-If you have any questions about your account or need assistance, please don't hesitate to contact our customer service team at 1-800-BANK-123.
-
-Thank you for banking with us.
-
-Sincerely,
-Customer Service Team
-First National Bank`,
-    snippet: 'Your monthly account statement for October is now available. You can view and download it from your online banking.',
-    isRead: true,
-    isStarred: false,
-    isImportant: true,
-    hasAttachments: true,
-    receivedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-    labels: ['Important'],
-  },
-];
-
 export function InboxView({ category = 'inbox', searchQuery, onEmailSelect, className }: InboxViewProps) {
-  const [emails, setEmails] = useState<Email[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedEmails, setSelectedEmails] = useState<Set<string>>(new Set());
   const [selectedEmailId, setSelectedEmailId] = useState<string>();
 
-  // Filter emails based on category and search query
-  const filteredEmails = React.useMemo(() => {
-    let filtered = mockEmails;
-
-    // Filter by category
-    switch (category) {
-      case 'starred':
-        filtered = filtered.filter(email => email.isStarred);
-        break;
-      case 'important':
-        filtered = filtered.filter(email => email.isImportant);
-        break;
-      case 'sent':
-        // In a real app, this would fetch sent emails
-        filtered = [];
-        break;
-      case 'drafts':
-        // In a real app, this would fetch draft emails
-        filtered = [];
-        break;
-      case 'spam':
-        // In a real app, this would fetch spam emails
-        filtered = [];
-        break;
-      case 'trash':
-        // In a real app, this would fetch trashed emails
-        filtered = [];
-        break;
-      case 'promotions':
-        filtered = filtered.filter(email => 
-          email.labels?.includes('Promotions')
-        );
-        break;
-      case 'cold-emails':
-        filtered = filtered.filter(email => 
-          email.labels?.includes('Cold Emails')
-        );
-        break;
-      default: // inbox
-        filtered = filtered.filter(email => 
-          !email.labels?.includes('Spam') && 
-          !email.labels?.includes('Trash')
-        );
-    }
-
-    // Filter by search query
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(email =>
-        email.from.toLowerCase().includes(query) ||
-        email.subject.toLowerCase().includes(query) ||
-        email.snippet.toLowerCase().includes(query)
-      );
-    }
-
-    return filtered;
-  }, [category, searchQuery]);
-
-  useEffect(() => {
-    // Simulate loading
-    setLoading(true);
-    const timer = setTimeout(() => {
-      setEmails(filteredEmails);
-      setLoading(false);
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [filteredEmails]);
+  const {
+    emails,
+    loading,
+    error,
+    hasMore,
+    refreshEmails,
+    loadMoreEmails,
+    starEmail,
+    unstarEmail,
+    archiveEmail,
+    deleteEmail,
+    markAsRead,
+    markAsUnread,
+  } = useEmails({ category, searchQuery });
 
   const handleEmailSelect = (email: Email) => {
-    setSelectedEmailId(email.id);
+    setSelectedEmailId(email.gmailId);
     onEmailSelect?.(email);
+    
+    // Mark as read when selected if it's unread
+    if (!email.isRead) {
+      markAsRead(email.gmailId).catch(console.error);
+    }
   };
 
-  const handleEmailStar = (emailId: string) => {
-    setEmails(prev =>
-      prev.map(email =>
-        email.id === emailId
-          ? { ...email, isStarred: !email.isStarred }
-          : email
-      )
-    );
+  const handleEmailStar = async (emailId: string) => {
+    const email = emails.find(e => e.gmailId === emailId);
+    if (!email) return;
+
+    try {
+      if (email.isStarred) {
+        await unstarEmail(emailId);
+      } else {
+        await starEmail(emailId);
+      }
+    } catch (error) {
+      console.error('Error toggling star:', error);
+    }
   };
 
-  const handleEmailArchive = (emailId: string) => {
-    // In a real app, this would call the archive API
-    setEmails(prev => prev.filter(email => email.id !== emailId));
+  const handleEmailArchive = async (emailId: string) => {
+    try {
+      await archiveEmail(emailId);
+    } catch (error) {
+      console.error('Error archiving email:', error);
+    }
   };
 
-  const handleEmailDelete = (emailId: string) => {
-    // In a real app, this would call the delete API
-    setEmails(prev => prev.filter(email => email.id !== emailId));
+  const handleEmailDelete = async (emailId: string) => {
+    try {
+      await deleteEmail(emailId);
+    } catch (error) {
+      console.error('Error deleting email:', error);
+    }
   };
 
-  const handleEmailToggleImportant = (emailId: string) => {
-    setEmails(prev =>
-      prev.map(email =>
-        email.id === emailId
-          ? { ...email, isImportant: !email.isImportant }
-          : email
-      )
-    );
+  const handleEmailToggleImportant = async (emailId: string) => {
+    // Note: Gmail API doesn't have a direct "important" action
+    // This would need to be implemented with labels
+    console.log('Toggle important not implemented yet for:', emailId);
+  };
+
+  const handleSelectEmail = (emailId: string, selected: boolean) => {
+    const newSelected = new Set(selectedEmails);
+    if (selected) {
+      newSelected.add(emailId);
+    } else {
+      newSelected.delete(emailId);
+    }
+    setSelectedEmails(newSelected);
   };
 
   const handleSelectAll = () => {
-    setSelectedEmails(new Set(emails.map(email => email.id)));
+    setSelectedEmails(new Set(emails.map(email => email.gmailId)));
   };
 
   const handleDeselectAll = () => {
@@ -314,12 +97,92 @@ export function InboxView({ category = 'inbox', searchQuery, onEmailSelect, clas
   };
 
   const handleRefresh = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setEmails([...mockEmails]);
-      setLoading(false);
-    }, 1000);
+    refreshEmails();
+    setSelectedEmails(new Set());
   };
+
+  const handleBulkArchive = async () => {
+    const emailIds = Array.from(selectedEmails);
+    try {
+      await Promise.all(emailIds.map(id => archiveEmail(id)));
+      setSelectedEmails(new Set());
+    } catch (error) {
+      console.error('Error bulk archiving:', error);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    const emailIds = Array.from(selectedEmails);
+    try {
+      await Promise.all(emailIds.map(id => deleteEmail(id)));
+      setSelectedEmails(new Set());
+    } catch (error) {
+      console.error('Error bulk deleting:', error);
+    }
+  };
+
+  const handleBulkStar = async () => {
+    const emailIds = Array.from(selectedEmails);
+    try {
+      await Promise.all(emailIds.map(id => starEmail(id)));
+    } catch (error) {
+      console.error('Error bulk starring:', error);
+    }
+  };
+
+  const handleMarkImportant = () => {
+    // Note: Would need to implement with Gmail labels
+    console.log('Bulk mark important not implemented yet');
+  };
+
+  // Show error state
+  if (error && !loading && emails.length === 0) {
+    return (
+      <div className={`flex flex-col items-center justify-center h-64 text-center ${className}`}>
+        <div className="text-red-600 mb-4">
+          <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to load emails</h3>
+        <p className="text-gray-600 mb-4">{error}</p>
+        <button
+          onClick={handleRefresh}
+          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
+  // Show empty state
+  if (!loading && emails.length === 0 && !error) {
+    return (
+      <div className={`flex flex-col items-center justify-center h-64 text-center ${className}`}>
+        <div className="text-gray-400 mb-4">
+          <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2 2v-5m16 0h-2.5a2.5 2.5 0 00-2.5 2.5v2.5a2.5 2.5 0 00-2.5-2.5H13" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">No emails found</h3>
+        <p className="text-gray-600 mb-4">
+          {searchQuery 
+            ? `No emails match "${searchQuery}"`
+            : `No emails in your ${category}`
+          }
+        </p>
+        {searchQuery && (
+          <button
+            onClick={() => window.location.reload()}
+            className="text-blue-600 hover:text-blue-700"
+          >
+            Clear search
+          </button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={className}>
@@ -329,52 +192,51 @@ export function InboxView({ category = 'inbox', searchQuery, onEmailSelect, clas
         onSelectAll={handleSelectAll}
         onDeselectAll={handleDeselectAll}
         onRefresh={handleRefresh}
-        onArchiveSelected={() => {
-          // Bulk archive selected emails
-          setEmails(prev => 
-            prev.filter(email => !selectedEmails.has(email.id))
-          );
-          setSelectedEmails(new Set());
-        }}
-        onDeleteSelected={() => {
-          // Bulk delete selected emails
-          setEmails(prev => 
-            prev.filter(email => !selectedEmails.has(email.id))
-          );
-          setSelectedEmails(new Set());
-        }}
-        onStarSelected={() => {
-          // Bulk star selected emails
-          setEmails(prev =>
-            prev.map(email =>
-              selectedEmails.has(email.id)
-                ? { ...email, isStarred: true }
-                : email
-            )
-          );
-        }}
-        onMarkImportant={() => {
-          // Bulk mark as important
-          setEmails(prev =>
-            prev.map(email =>
-              selectedEmails.has(email.id)
-                ? { ...email, isImportant: true }
-                : email
-            )
-          );
-        }}
+        onArchiveSelected={handleBulkArchive}
+        onDeleteSelected={handleBulkDelete}
+        onStarSelected={handleBulkStar}
+        onMarkImportant={handleMarkImportant}
       />
       
       <EmailList
-        emails={emails}
+        emails={emails.map(email => ({
+          id: email.gmailId,
+          from: email.from,
+          to: email.to,
+          subject: email.subject,
+          snippet: email.snippet,
+          isRead: email.isRead,
+          isStarred: email.isStarred,
+          isImportant: email.isImportant,
+          hasAttachments: email.hasAttachments,
+          receivedAt: email.receivedAt,
+          labels: [], // Convert labelIds to labels if needed
+        }))}
         selectedEmailId={selectedEmailId}
-        onEmailSelect={handleEmailSelect}
+        onEmailSelect={(email) => {
+          const originalEmail = emails.find(e => e.gmailId === email.id);
+          if (originalEmail) {
+            handleEmailSelect(originalEmail);
+          }
+        }}
         onEmailStar={handleEmailStar}
         onEmailArchive={handleEmailArchive}
         onEmailDelete={handleEmailDelete}
         onEmailToggleImportant={handleEmailToggleImportant}
         loading={loading}
       />
+
+      {/* Load more button */}
+      {hasMore && !loading && (
+        <div className="flex justify-center py-4">
+          <button
+            onClick={loadMoreEmails}
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Load More Emails
+          </button>
+        </div>
+      )}
     </div>
   );
 }

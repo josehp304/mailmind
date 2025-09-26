@@ -3,11 +3,12 @@ import { requireAuth } from '@/lib/gmail/auth-helper';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const gmail = await requireAuth();
-    const email = await gmail.getMessage(params.id);
+    const { id } = await params;
+    const email = await gmail.getMessage(id);
 
     return NextResponse.json({ email });
 
@@ -22,31 +23,32 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const gmail = await requireAuth();
     const { action } = await request.json();
+    const { id } = await params;
 
     let result;
     switch (action) {
       case 'archive':
-        result = await gmail.archiveMessage(params.id);
+        result = await gmail.archiveMessage(id);
         break;
       case 'read':
-        result = await gmail.markAsRead(params.id);
+        result = await gmail.markAsRead(id);
         break;
       case 'unread':
-        result = await gmail.markAsUnread(params.id);
+        result = await gmail.markAsUnread(id);
         break;
       case 'star':
-        result = await gmail.starMessage(params.id);
+        result = await gmail.starMessage(id);
         break;
       case 'unstar':
-        result = await gmail.unstarMessage(params.id);
+        result = await gmail.unstarMessage(id);
         break;
       case 'trash':
-        result = await gmail.trashMessage(params.id);
+        result = await gmail.trashMessage(id);
         break;
       default:
         return NextResponse.json(

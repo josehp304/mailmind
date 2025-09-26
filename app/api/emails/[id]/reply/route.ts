@@ -3,11 +3,12 @@ import { requireAuth } from '@/lib/gmail/auth-helper';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const gmail = await requireAuth();
     const { body } = await request.json();
+    const { id } = await params;
 
     if (!body) {
       return NextResponse.json(
@@ -16,7 +17,7 @@ export async function POST(
       );
     }
 
-    const result = await gmail.replyToEmail(params.id, body);
+    const result = await gmail.replyToEmail(id, body);
 
     return NextResponse.json({ success: true, messageId: result.id });
 
