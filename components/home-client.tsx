@@ -108,8 +108,9 @@ export default function HomeClient() {
                 setSelectedEmail(prev => prev ? { ...prev, isImportant: !prev.isImportant } : null);
               }}
               onAISummarize={() => {
-                console.log('AI Summarize:', selectedEmail.gmailId);
-                // TODO: Call AI summarization API
+                // The EmailSummaryCard will handle the summarization automatically
+                // This callback can be used for additional actions if needed
+                console.log('AI Summary requested for:', selectedEmail.gmailId);
               }}
             />
           </div>

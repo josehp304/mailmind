@@ -412,7 +412,7 @@ export function EmailProvider({ children }: { children: ReactNode }) {
       const response = await fetch(`/api/gmail/messages/${emailId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'read' }),
+        body: JSON.stringify({ action: 'markRead' }),
       });
 
       if (!response.ok) throw new Error('Failed to mark as read');
@@ -448,7 +448,7 @@ export function EmailProvider({ children }: { children: ReactNode }) {
       const response = await fetch(`/api/gmail/messages/${emailId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'unread' }),
+        body: JSON.stringify({ action: 'markUnread' }),
       });
 
       if (!response.ok) throw new Error('Failed to mark as unread');

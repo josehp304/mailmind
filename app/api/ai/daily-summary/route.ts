@@ -1,7 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 
+// POST endpoint - Generate daily summary using AI
 export async function POST(request: NextRequest) {
   try {
+    // Get authentication tokens from cookies
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get('access_token')?.value;
+    
+    if (!accessToken) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { emails } = body;
 
@@ -21,7 +31,7 @@ export async function POST(request: NextRequest) {
     const emailsContext = emails.map((email, index) => 
       `${index + 1}. From: ${email.from}\nSubject: ${email.subject}\nPreview: ${email.snippet}\nStatus: ${email.isUnread ? 'Unread' : 'Read'}`
     ).join('\n\n');
-    console.log(emailsContext)
+
     const prompt = `Analyze these ${emails.length} emails and provide a concise summary:
 
 ${emailsContext}
@@ -52,7 +62,7 @@ SNIPPET: [short preview]`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'qwen/qwen3-32b',
         messages: [
           {
             role: 'system',
@@ -64,7 +74,6 @@ SNIPPET: [short preview]`;
           } 
         ],
         temperature: 0.3,
-        // max_tokens: 400,
       }),
     });
 
@@ -110,41 +119,52 @@ SNIPPET: [short preview]`;
   }
 }
 
-// export async function GET(request: NextRequest) {
-//   try {
-//     const session = await getServerSession();
-//     if (!session?.user?.id) {
-//       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-//     }
+// GET endpoint - Load daily summary from database (temporarily disabled)
+export async function GET(request: NextRequest) {
+  try {
+    // Get authentication tokens from cookies
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get('access_token')?.value;
+    
+    if (!accessToken) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-//     // Check if we have existing summary, if not generate one with today's emails
-//     let summary = await aiEmailService.getDailySummary(session.user.id);
+    // Database operations temporarily disabled due to UUID constraints
+    // Return null to indicate no cached summary available
+    return NextResponse.json({ summary: null });
 
-//     if (!summary) {
-//       console.log('No existing summary found, generating new one...');
-//       try {
-//         const todaysEmails = await getTodaysEmails();
-//         console.log(`Generating summary for ${todaysEmails.length} emails`);
-//         summary = await aiEmailService.generateDailySummary(session.user.id, todaysEmails);
-//       } catch (emailError) {
-//         console.error('Error fetching emails for auto-summary:', emailError);
-//         // Return a basic summary if email fetching fails
-//         summary = {
-//           summary: 'Unable to fetch emails for summary.',
-//           keyPoints: [],
-//           urgentEmails: 0,
-//           totalEmails: 0,
-//           snippet: 'Summary unavailable'
-//         };
-//       }
-//     }
+  } catch (error) {
+    console.error('Error fetching daily summary:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch summary' },
+      { status: 500 }
+    );
+  }
+}
 
-//     return NextResponse.json({ summary });
-//   } catch (error) {
-//     console.error('Error fetching daily summary:', error);
-//     return NextResponse.json(
-//       { error: 'Failed to fetch summary' },
-//       { status: 500 }
-//     );
-//   }
-// }
+// PUT endpoint - Save daily summary to database (temporarily disabled)
+export async function PUT(request: NextRequest) {
+  try {
+    // Get authentication tokens from cookies
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get('access_token')?.value;
+    
+    if (!accessToken) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const summary = await request.json();
+    
+    // Database operations temporarily disabled due to UUID constraints
+    // Return the summary without saving to database
+    return NextResponse.json({ summary });
+
+  } catch (error) {
+    console.error('Error saving daily summary:', error);
+    return NextResponse.json(
+      { error: 'Failed to save summary' },
+      { status: 500 }
+    );
+  }
+}

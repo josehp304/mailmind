@@ -218,7 +218,7 @@ export function InboxView({ category = 'inbox', searchQuery, onEmailSelect, clas
         />
       </div>
       
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-x-hidden">
         <EmailList
         emails={emails.map(email => ({
           id: email.gmailId,

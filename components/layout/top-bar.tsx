@@ -126,7 +126,7 @@ export function TopBar({
         )}
 
         {/* Notifications */}
-        <Button variant="ghost" size="sm" className="relative">
+        <Button variant="ghost" size="sm" className="hidden sm:relative">
           <Bell className="w-5 h-5" />
         </Button>
 

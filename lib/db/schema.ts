@@ -21,6 +21,7 @@ export const users = pgTable('users', {
   refreshToken: text('refresh_token'),
   accessToken: text('access_token'),
   tokenExpiry: timestamp('token_expiry'),
+  lastIndexedEmailId: varchar('last_indexed_email_id', { length: 255 }),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
@@ -114,6 +115,24 @@ export const userPreferences = pgTable('user_preferences', {
   updatedAt: timestamp('updated_at').defaultNow(),
 });
 
+// Email processing results for AI analysis
+export const emailProcessingResults = pgTable('email_processing_results', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  emailId: uuid('email_id').references(() => emails.id, { onDelete: 'cascade' }).notNull(),
+  gmailId: varchar('gmail_id', { length: 255 }).notNull(),
+  summary: text('summary'),
+  requiresMeeting: boolean('requires_meeting').default(false),
+  meetingReason: text('meeting_reason'),
+  suggestedReply: text('suggested_reply'),
+  replyDraftId: varchar('reply_draft_id', { length: 255 }),
+  calendarEventId: varchar('calendar_event_id', { length: 255 }),
+  calendarEventLink: text('calendar_event_link'),
+  processingStatus: varchar('processing_status', { length: 50 }).default('pending'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many, one }) => ({
   emails: many(emails),
@@ -121,12 +140,14 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   automations: many(automations),
   dailySummaries: many(dailyEmailSummaries),
   preferences: one(userPreferences),
+  processingResults: many(emailProcessingResults),
 }));
 
 export const emailsRelations = relations(emails, ({ one, many }) => ({
   user: one(users, { fields: [emails.userId], references: [users.id] }),
   summary: one(emailSummaries),
   automations: many(automations),
+  processingResults: many(emailProcessingResults),
 }));
 
 export const labelsRelations = relations(labels, ({ one }) => ({
@@ -150,6 +171,11 @@ export const userPreferencesRelations = relations(userPreferences, ({ one }) => 
   user: one(users, { fields: [userPreferences.userId], references: [users.id] }),
 }));
 
+export const emailProcessingResultsRelations = relations(emailProcessingResults, ({ one }) => ({
+  user: one(users, { fields: [emailProcessingResults.userId], references: [users.id] }),
+  email: one(emails, { fields: [emailProcessingResults.emailId], references: [emails.id] }),
+}));
+
 // Zod schemas for validation
 export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);
@@ -163,3 +189,5 @@ export const insertUserPreferencesSchema = createInsertSchema(userPreferences);
 export const selectUserPreferencesSchema = createSelectSchema(userPreferences);
 export const insertDailySummarySchema = createInsertSchema(dailyEmailSummaries);
 export const selectDailySummarySchema = createSelectSchema(dailyEmailSummaries);
+export const insertEmailProcessingResultSchema = createInsertSchema(emailProcessingResults);
+export const selectEmailProcessingResultSchema = createSelectSchema(emailProcessingResults);

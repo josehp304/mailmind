@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ComposeModal } from '@/components/email/compose-modal';
+import { EmailSummaryCard } from '@/components/ai/email-summary-card';
 import { 
   Reply, 
   ReplyAll, 
@@ -229,6 +230,23 @@ export function EmailViewer({
               )}
             </div>
           </div>
+        </div>
+
+        {/* AI Summary Card */}
+        <div className="px-6 py-4">
+          <EmailSummaryCard
+            email={{
+              id: email.id,
+              from: email.from,
+              to: email.to,
+              subject: email.subject,
+              body: email.body,
+              snippet: email.snippet,
+              date: email.receivedAt.toISOString(),
+            }}
+            // onSummarize={onAISummarize}
+            className="mb-0"
+          />
         </div>
 
         {/* Email body */}
